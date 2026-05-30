@@ -1,0 +1,455 @@
+"use client";
+import { useState } from "react";
+import { registerUser } from "../lib/api";
+
+export default function Register() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirm: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError("");
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!form.name || !form.email || !form.password || !form.confirm) {
+      setError("Please fill in all fields.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await registerUser({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      });
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(true);
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      }
+    } catch {
+      setError("Server error. Make sure backend is running!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const strength = (() => {
+    const p = form.password;
+    if (!p) return 0;
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (/[A-Z]/.test(p)) s++;
+    if (/[0-9]/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return s;
+  })();
+
+  const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strength];
+  const strengthColor = ["", "#ef4444", "#f97316", "#eab308", "#22c55e"][strength];
+
+  return (
+    <main style={{
+      backgroundColor: "#000000", minHeight: "100vh",
+      display: "flex", flexDirection: "column",
+      fontFamily: "sans-serif", color: "#fff", overflowX: "hidden",
+    }}>
+
+      {/* ── BACKGROUND GRID ── */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        backgroundImage: `linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px)`,
+        backgroundSize: "50px 50px",
+      }} />
+
+      {/* ── GLOW ── */}
+      <div style={{
+        position: "fixed", top: "50%", left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: 700, height: 700, borderRadius: "50%",
+        pointerEvents: "none", zIndex: 0,
+        background: "radial-gradient(circle, rgba(0,200,255,0.05) 0%, transparent 70%)",
+      }} />
+
+      {/* ════════════ NAVBAR ════════════ */}
+      <nav style={{
+        position: "relative", zIndex: 10,
+        padding: "20px 40px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        borderBottom: "1px solid rgba(0,229,255,0.08)",
+      }}>
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 9,
+            background: "rgba(0,229,255,0.08)",
+            border: "1px solid rgba(0,229,255,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#00e5ff" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>
+            Cyber<span style={{ color: "#00e5ff" }}>Shield</span>
+          </span>
+        </a>
+
+        <a href="/login" style={{
+          padding: "9px 20px", fontSize: 13, color: "#94a3b8",
+          border: "1px solid #1e293b", borderRadius: 9,
+          textDecoration: "none", transition: "all 0.2s",
+        }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(0,229,255,0.4)"; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1e293b"; e.currentTarget.style.color = "#94a3b8"; }}
+        >Login</a>
+      </nav>
+
+      {/* ════════════ REGISTER CARD ════════════ */}
+      <div style={{
+        flex: 1, display: "flex", alignItems: "center",
+        justifyContent: "center", padding: "40px 24px",
+        position: "relative", zIndex: 10,
+      }}>
+        <div style={{
+          width: "100%", maxWidth: 480,
+          backgroundColor: "#050505",
+          border: "1px solid #0f172a",
+          borderRadius: 24, padding: "44px 40px",
+          boxShadow: "0 0 60px rgba(0,229,255,0.04)",
+        }}>
+
+          {/* SUCCESS STATE */}
+          {success ? (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%", margin: "0 auto 24px",
+                background: "rgba(34,197,94,0.1)",
+                border: "1px solid rgba(34,197,94,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="#22c55e" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <h2 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 10px", color: "#22c55e" }}>Account Created!</h2>
+              <p style={{ color: "#475569", fontSize: 14 }}>Redirecting you to login...</p>
+            </div>
+          ) : (
+            <>
+              {/* Icon */}
+              <div style={{
+                width: 56, height: 56, borderRadius: 16, margin: "0 auto 24px",
+                background: "rgba(0,229,255,0.08)",
+                border: "1px solid rgba(0,229,255,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#00e5ff" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                </svg>
+              </div>
+
+              <h1 style={{ fontSize: 28, fontWeight: 900, textAlign: "center", margin: "0 0 6px" }}>
+                Create Account
+              </h1>
+              <p style={{ color: "#475569", fontSize: 14, textAlign: "center", margin: "0 0 32px" }}>
+                Join CyberShield and stay protected
+              </p>
+
+              {/* Error */}
+              {error && (
+                <div style={{
+                  padding: "12px 16px", borderRadius: 10, marginBottom: 20,
+                  backgroundColor: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  color: "#f87171", fontSize: 13,
+                  display: "flex", alignItems: "center", gap: 8,
+                }}>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              {/* FORM */}
+              <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+                {/* Full Name */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.5px" }}>
+                    FULL NAME
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text" name="name" placeholder="Khadija Khan"
+                      value={form.name} onChange={handleChange}
+                      style={inputStyle}
+                      onFocus={(e) => (e.target.style.borderColor = "rgba(0,229,255,0.5)")}
+                      onBlur={(e) => (e.target.style.borderColor = "#1e293b")}
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.5px" }}>
+                    EMAIL ADDRESS
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                      </svg>
+                    </div>
+                    <input
+                      type="email" name="email" placeholder="you@example.com"
+                      value={form.email} onChange={handleChange}
+                      style={inputStyle}
+                      onFocus={(e) => (e.target.style.borderColor = "rgba(0,229,255,0.5)")}
+                      onBlur={(e) => (e.target.style.borderColor = "#1e293b")}
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.5px" }}>
+                    PASSWORD
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                      </svg>
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"} name="password"
+                      placeholder="Min. 8 characters"
+                      value={form.password} onChange={handleChange}
+                      style={{ ...inputStyle, paddingRight: 44 }}
+                      onFocus={(e) => (e.target.style.borderColor = "rgba(0,229,255,0.5)")}
+                      onBlur={(e) => (e.target.style.borderColor = "#1e293b")}
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} style={eyeBtn}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00e5ff")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}>
+                      <EyeIcon open={showPassword} />
+                    </button>
+                  </div>
+
+                  {/* Password Strength Bar */}
+                  {form.password && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ display: "flex", gap: 5, marginBottom: 6 }}>
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} style={{
+                            flex: 1, height: 4, borderRadius: 99,
+                            backgroundColor: i <= strength ? strengthColor : "#1e293b",
+                            transition: "background-color 0.3s",
+                          }} />
+                        ))}
+                      </div>
+                      <span style={{ fontSize: 11, color: strengthColor, fontWeight: 600 }}>
+                        {strengthLabel} Password
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.5px" }}>
+                    CONFIRM PASSWORD
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#475569" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type={showConfirm ? "text" : "password"} name="confirm"
+                      placeholder="Re-enter password"
+                      value={form.confirm} onChange={handleChange}
+                      style={{
+                        ...inputStyle, paddingRight: 44,
+                        borderColor: form.confirm
+                          ? form.confirm === form.password
+                            ? "rgba(34,197,94,0.5)"
+                            : "rgba(239,68,68,0.5)"
+                          : "#1e293b",
+                      }}
+                      onFocus={(e) => {
+                        if (!form.confirm) e.target.style.borderColor = "rgba(0,229,255,0.5)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = form.confirm
+                          ? form.confirm === form.password ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.5)"
+                          : "#1e293b";
+                      }}
+                    />
+                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} style={eyeBtn}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#00e5ff")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#475569")}>
+                      <EyeIcon open={showConfirm} />
+                    </button>
+                    {/* Match indicator */}
+                    {form.confirm && (
+                      <div style={{ position: "absolute", right: 44, top: "50%", transform: "translateY(-50%)" }}>
+                        {form.confirm === form.password ? (
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#22c55e" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#ef4444" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Register Button */}
+                <button
+                  type="submit" disabled={loading}
+                  style={{
+                    width: "100%", padding: "14px",
+                    backgroundColor: loading ? "rgba(0,229,255,0.5)" : "#00e5ff",
+                    color: "#000", fontWeight: 800, fontSize: 15,
+                    border: "none", borderRadius: 12,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    boxShadow: loading ? "none" : "0 0 30px rgba(0,229,255,0.4)",
+                    transition: "all 0.2s", marginTop: 6,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  }}
+                  onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.backgroundColor = "#00cfeb"; e.currentTarget.style.boxShadow = "0 0 50px rgba(0,229,255,0.6)"; } }}
+                  onMouseLeave={(e) => { if (!loading) { e.currentTarget.style.backgroundColor = "#00e5ff"; e.currentTarget.style.boxShadow = "0 0 30px rgba(0,229,255,0.4)"; } }}
+                >
+                  {loading ? (
+                    <>
+                      <svg style={{ animation: "spin 1s linear infinite" }} width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                      </svg>
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create My Account
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "24px 0" }}>
+                <div style={{ flex: 1, height: 1, backgroundColor: "#0f172a" }} />
+                <span style={{ color: "#334155", fontSize: 12 }}>OR</span>
+                <div style={{ flex: 1, height: 1, backgroundColor: "#0f172a" }} />
+              </div>
+
+              {/* Login Link */}
+              <p style={{ textAlign: "center", fontSize: 14, color: "#475569", margin: 0 }}>
+                Already have an account?{" "}
+                <a href="/login" style={{ color: "#00e5ff", textDecoration: "none", fontWeight: 600 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                >Login here →</a>
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ position: "relative", zIndex: 10, textAlign: "center", padding: "20px", borderTop: "1px solid #0a0a0a" }}>
+        <p style={{ color: "#1e293b", fontSize: 12, margin: 0 }}>© 2026 CyberShield. Your data is secure.</p>
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        input::placeholder { color: #334155; }
+        * { box-sizing: border-box; }
+      `}</style>
+    </main>
+  );
+}
+
+/* ── Shared Styles ── */
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "13px 14px 13px 42px",
+  backgroundColor: "#0a0a0a",
+  border: "1px solid #1e293b",
+  borderRadius: 12,
+  color: "#f1f5f9",
+  fontSize: 14,
+  outline: "none",
+  transition: "border-color 0.2s",
+  boxSizing: "border-box",
+};
+
+const eyeBtn: React.CSSProperties = {
+  position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+  background: "none", border: "none", cursor: "pointer", padding: 0,
+  color: "#475569", transition: "color 0.2s",
+};
+
+/* ── Eye Icon ── */
+function EyeIcon({ open }: { open: boolean }) {
+  return open ? (
+    <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+    </svg>
+  ) : (
+    <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round"
+        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
